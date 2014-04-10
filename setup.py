@@ -10,6 +10,6 @@ setup(
     url='https://github.com/jverhoeven/pyzmqrpc',
     download_url='https://github.com/jverhoeven/pyzmqrpc/tarball/0.1',
     keywords=['zeromq', 'rpc', 'pyzmq'],
-    requires=["pyzmq"],
+    install_requires=["pyzmq"],
     classifiers=[]
 )
