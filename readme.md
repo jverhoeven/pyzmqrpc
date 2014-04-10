@@ -1,5 +1,5 @@
 # Introduction
-This Python package adds basic Remote Procedure Call functionalities to ZeroMQ.
+This Python package adds basic Remote Procedure Call functionalities to ZeroMQ. It does not do advanced serializing, but simply uses JSON call and response structures. 
 # Install
 pip install pyzmqrpc
 # Usage
@@ -48,9 +48,6 @@ Forwards messages from a SUB --> REQ socket or from a PUB --> REP socket using
 Invokes a remotely implemented method over a PUB or REQ socket. For PUB sockets no response messages can be expected.
 ## ZmqRpcServer
 Implements a method that can be remotely invoked. Uses ZmqReceiver functionality to listen for messages on a REP or SUB socket, deserialize the message and invoke them.
-
-# Install
-pip install pyzmqrpc
 
 # Example
 This example is from demo_pub_sub.py. It should be relatively self explanatory. It starts an RPC server thread, registers a function, then creates an RPC client and invokes the registered function.
