@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: pyzmqrpc
+Version: 0.1
+Summary: A simple ZMQ RPC extension on ZeroMQ
+Home-page: https://github.com/jverhoeven/pyzmqrpc
+Author: J Verhoeven
+Author-email: jan@visity.nl
+License: UNKNOWN
+Download-URL: https://github.com/jverhoeven/pyzmqrpc/tarball/0.1
+Description: UNKNOWN
+Keywords: zeromq,rpc,pyzmq
+Platform: UNKNOWN
+Requires: pyzmq
