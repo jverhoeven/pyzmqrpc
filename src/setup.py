@@ -7,8 +7,8 @@ setup(
     description='A simple ZMQ extension on ZeroMQ',
     author='J Verhoeven',
     author_email='jan@visity.nl',
-    url='https://bitbucket.org/jlmverhoeven/zmqrpc',
-    download_url='https://bitbucket.org/jlmverhoeven/zmqrpc/tarball/0.1',
-    keywords=['zeromq', 'rpc'],
+    url='https://github.com/jverhoeven/pyzmqrpc',
+    download_url='https://github.com/jverhoeven/pyzmqrpc/tarball/0.1',
+    keywords=['zeromq', 'rpc', 'pyzmq'],
     classifiers=[],
 )
