@@ -3,27 +3,27 @@ This Python package adds basic Remote Procedure Call functionalities to ZeroMQ. 
 # Install
 pip install pyzmqrpc
 # Usage
+Implement a function on the server that can be invoked:
+
+    def test_method(param1, param2):
+		return param1 + param2
+		
 Create a ZeroMQ server:
 
 	server = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:30000",
             rpc_functions={"test_method": test_method})
     server.start()
     
-Implement a method on the server that can be invoked:
-
-    def test_method(param1, param2):
-		return param1 + param2
-		
 Create a client that connects to that server endpoint:
 
 	client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:30000"])
 	
-Have the client invoke it:
+Have the client invoke the function on the server:
 
 	client.invoke(function_name="test_method",
             function_parameters={"param1": "Hello", "param2": " world"})
 
-More examples below and are included in the repository.
+More examples below and are included in the repository. A unit test is also included.
 
 # Rationale
 Working with ZeroMQ is great. It is fun, fast and simply works. I use it right now for routing timeseries samples from all sorts of sampling devices to a central location on the internet. All samplers use PUB sockets. The samples are collected using a proxy app that bridges the internet to a remote host via a password protected REQ/REP socket. From there the samples are exposed via a PUB socket again.
@@ -128,3 +128,12 @@ Example with invoking method in REP/REQ. The difference with PUB/SUB is that thi
         # Clean up
         server.stop()
         server.join()
+
+# Known issues
+* Serialization is very limited and only supports types that can be serialized over JSON.
+* Only localhost type of testing done with passwords. Not sure if auth works over remote connections
+* Increased socket recreation timeouts to 10 minutes
+* For some reason it seems the installer dependency to pyzmq is not taken into account over a pip installation via Pypi. It does work via local tar.gz install.
+
+# Notes
+Please note that this implementation is very pre-mature, although it works fine for me in my own project and has operated stable for months.

@@ -18,7 +18,7 @@ from threading import Thread
 # The rpc_functions are dict structures mapping a string value to a real method implementation.
 # A username/password may be used for REQ/REP pairs (does not seem to be working for PUB/SUB sockets
 class ZmqRpcServer(ZmqReceiver):
-    def __init__(self, zmq_rep_bind_address=None, zmq_sub_connect_addresses=None, rpc_functions=None, recreate_sockets_on_timeout_of_sec=60, username=None, password=None):
+    def __init__(self, zmq_rep_bind_address=None, zmq_sub_connect_addresses=None, rpc_functions=None, recreate_sockets_on_timeout_of_sec=600, username=None, password=None):
         ZmqReceiver.__init__(self, zmq_rep_bind_address, zmq_sub_connect_addresses, recreate_sockets_on_timeout_of_sec, username, password)
         self.rpc_functions = rpc_functions
 

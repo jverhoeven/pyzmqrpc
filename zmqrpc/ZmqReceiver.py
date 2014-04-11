@@ -18,7 +18,7 @@ from threading import Thread
 # method to process it. Subclasses should override that. A response must be implemented for REP sockets, but
 # is useless for SUB sockets.
 class ZmqReceiver():
-    def __init__(self, zmq_rep_bind_address=None, zmq_sub_connect_addresses=None, recreate_sockets_on_timeout_of_sec=60, username=None, password=None):
+    def __init__(self, zmq_rep_bind_address=None, zmq_sub_connect_addresses=None, recreate_sockets_on_timeout_of_sec=600, username=None, password=None):
         self.context = zmq.Context()
         self.auth = None
         self.last_received_message = None

@@ -161,7 +161,7 @@ class ZmqSender():
                 self.recreate_req_socket = True
                 raise Exception("No response received on ZMQ Request for samples to end point {0} in {1} seconds. Discarding message. Marking REQ socket to be recreated on next try.".format(self.zmq_req_endpoints, time_out_waiting_for_response_in_sec))
 
-    def send(self, message, time_out_waiting_for_response_in_sec=600):
+    def send(self, message, time_out_waiting_for_response_in_sec=60):
         # Create sockets if needed. Raise an exception if any problems are encountered
         if self.recreate_pub_socket:
             self.destroy_pub_socket()
