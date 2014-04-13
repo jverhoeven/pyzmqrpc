@@ -6,7 +6,7 @@ Created on Mar 31, 2014
 @copyright: MIT license, see http://opensource.org/licenses/MIT
 
 '''
-from zmqrpc.ZmqProxy import ZmqProxyRep2PubThread, ZmqProxySub2ReqThread
+from zmqrpc.ZmqProxy import ZmqProxyRep2PubThread, ZmqProxySub2ReqThread, ZmqProxyRep2ReqThread, ZmqProxySub2PubThread
 from zmqrpc.ZmqReceiver import ZmqReceiverThread
 from zmqrpc.ZmqSender import ZmqSender
 from zmqrpc.ZmqRpcServer import ZmqRpcServerThread
@@ -153,6 +153,59 @@ class TestZmqPackage(unittest.TestCase):
         self.assertEquals(response, None)
         self.assertEquals(test_state.last_invoked_param1, "value1sub")
 
+    def test_rpc1_req_rep_with_rep_req_proxy(self):
+        # RPC invoke method over REQ/REP sockets with an extra rep/req proxy in between
+        print "Test if invoking a method works over REQ/REP RPC socket, includes a username/password and also an extra rep/req proxy"
+
+        client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:7000"], username="username", password="password")
+
+        proxy_rep_req_thread = ZmqProxyRep2ReqThread(zmq_rep_bind_address='tcp://*:7000', zmq_req_connect_addresses=["tcp://localhost:7001"], username_rep="username", password_rep="password", username_req="username2", password_req="password2")
+        proxy_rep_req_thread.start()
+
+        server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:7001", rpc_functions={"invoke_test": invoke_test}, username="username2", password="password2")
+        server_thread.start()
+
+        response = client.invoke(function_name="invoke_test", function_parameters={"param1": "value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+
+        server_thread.stop()
+        server_thread.join()
+        proxy_rep_req_thread.stop()
+        proxy_rep_req_thread.join()
+        client.destroy()
+        # Cleaning up sockets takes some time
+        time.sleep(1)
+
+        self.assertEquals(response, "value1:value2")
+
+    def test_rpc1_pub_sub_with_pub_sub_proxy(self):
+        # RPC invoke method over PUB/SUB sockets and a PUB/SUB proxy
+        print "Test if invoking a method works over PUB/SUB RPC socket and a PUB/SUB proxy in between"
+        server_thread = ZmqRpcServerThread(zmq_sub_connect_addresses=["tcp://localhost:7001"], rpc_functions={"invoke_test": invoke_test})
+        server_thread.start()
+
+        proxy_pub_sub_thread = ZmqProxySub2PubThread(zmq_pub_bind_address="tcp://*:7001", zmq_sub_connect_addresses=['tcp://localhost:7000'])
+        proxy_pub_sub_thread.start()
+
+        client = ZmqRpcClient(zmq_pub_endpoint="tcp://*:7000")
+        # Wait a bit to avoid slow joiner...
+        time.sleep(1)
+
+        response = client.invoke(function_name="invoke_test", function_parameters={"param1": "value2sub", "param2": "value2pub"}, time_out_waiting_for_response_in_sec=3)
+
+        # Wait a bit to make sure message is sent...
+        time.sleep(1)
+
+        server_thread.stop()
+        server_thread.join()
+        proxy_pub_sub_thread.stop()
+        proxy_pub_sub_thread.join()
+        client.destroy()
+        # Cleaning up sockets takes some time
+        time.sleep(1)
+
+        # Response should be empty with PUB/SUB
+        self.assertEquals(response, None)
+        self.assertEquals(test_state.last_invoked_param1, "value2sub")
 
 if __name__ == '__main__':
     unittest.main()
