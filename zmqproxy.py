@@ -9,10 +9,10 @@ Created on Mar 31, 2014
 import argparse
 import signal
 import sys
-from zmqrpc.ZmqProxy import ZmqProxyRep2Pub, ZmqProxySub2Req
+from zmqrpc.ZmqProxy import ZmqProxyRep2Pub, ZmqProxySub2Req, ZmqProxyRep2Req, ZmqProxySub2Pub
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Proxies message either from SUB->REQ or from REP->PUB.')
+    parser = argparse.ArgumentParser(description='Proxies message either from SUB->REQ, SUB->PUB, REP->PUB or REP->REQ.')
     parser.add_argument('--sub', nargs='+', required=False, help='The SUB endpoints')
     parser.add_argument('--pub', required=False, help='The PUB endpoint')
     parser.add_argument('--req', nargs='+', required=False, help='The REQ endpoint')
@@ -25,15 +25,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print "Starting zmqproxy..."
 
-    if (args.sub is None and args.pub is None) or (args.sub is not None and args.pub is not None):
-        print "Fatal error: Either sub or pub must be supplied (and not both)"
-    elif (args.req is None and args.rep is None) or (args.req is not None and args.rep is not None):
-        print "Fatal error: Either req or rep must be supplied (and not both)"
-    elif args.sub is not None and args.req is None:
-        print "Fatal error: If sub is supplied, req is also expected. Proxy can only work sub->req OR req->pub"
-    elif args.pub is not None and args.rep is None:
-        print "Fatal error: If pub is supplied, rep is also expected. Proxy can only work sub->req OR rep->pub"
-    else:
+    if args.sub is not None and args.rep is not None:
+        print "Fatal error: Proxy cannot listen to both SUB and REP at the same time"
+    elif args.pub is not None and args.req is not None:
+        print "Fatal error: Proxy cannot send messages over both PUB and REQ sockets at the same time"
+    elif (args.sub is not None or args.rep is not None) and (args.pub is not None or args.req is not None):
 
         # Handle OS signals (like keyboard interrupt)
         def signal_handler(signal, frame):
@@ -42,10 +38,16 @@ if __name__ == '__main__':
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        if args.sub is not None:
+        if args.sub is not None and args.req is not None:
             server = ZmqProxySub2Req(zmq_sub_connect_addresses=args.sub, zmq_req_connect_addresses=args.req, username_sub=args.username_incoming, password_sub=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
             server.run()
-        elif args.pub is not None:
+        elif args.rep is not None and args.pub is not None:
             server = ZmqProxyRep2Pub(zmq_rep_bind_address=args.rep, zmq_pub_bind_address=args.pub, username_sub=args.username_incoming, password_sub=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
+            server.start()
+        elif args.sub is not None and args.pub is not None:
+            server = ZmqProxySub2Pub(zmq_sub_connect_addresses=args.sub, zmq_pub_bind_address=args.pub, username_sub=args.username_incoming, password_sub=args.password_incoming, username_pub=args.username_outgoing, password_pub=args.password_outgoing)
+            server.run()
+        elif args.rep is not None and args.req is not None:
+            server = ZmqProxyRep2Req(zmq_rep_bind_address=args.rep, zmq_req_connect_addresses=args.req, username_rep=args.username_incoming, password_rep=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
             server.start()
     print "Stopped zmqproxy..."
