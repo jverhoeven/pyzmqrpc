@@ -20,7 +20,10 @@ class ZmqProxySub2Req(ZmqReceiver):
 
     def handle_incoming_message(self, socket, message):
         # We don't care for the response, since we cannot pass it back via the pub socket or we got none from a pub socket
-        self.sender.send(message, time_out_waiting_for_response_in_sec=60)
+        try:
+            self.sender.send(message, time_out_waiting_for_response_in_sec=60)
+        except Exception as e:
+            print e
         return None
 
 
@@ -34,7 +37,10 @@ class ZmqProxySub2Pub(ZmqReceiver):
 
     def handle_incoming_message(self, socket, message):
         # We don't care for the response, since we cannot pass it back via the pub socket or we got none from a pub socket
-        self.sender.send(message, time_out_waiting_for_response_in_sec=60)
+        try:
+            self.sender.send(message, time_out_waiting_for_response_in_sec=60)
+        except Exception as e:
+            print e
         return None
 
 
@@ -47,9 +53,12 @@ class ZmqProxyRep2Pub(ZmqReceiver):
         self.sender = ZmqSender(zmq_req_endpoints=None, zmq_pub_endpoint=zmq_pub_bind_address, username=username_pub, password=password_pub)
 
     def handle_incoming_message(self, socket, message):
-        self.sender.send(message, time_out_waiting_for_response_in_sec=60)
-        # Pub socket does not provide response message, so return OK message
-        return self.create_response_message(200, "OK", None)
+        try:
+            self.sender.send(message, time_out_waiting_for_response_in_sec=60)
+            # Pub socket does not provide response message, so return OK message
+            return self.create_response_message(200, "OK", None)
+        except Exception as e:
+            return self.create_response_message(status_code=400, status_message="Error", response_message=e)
 
 
 # This class implements a simple message forwarding from a REQ/REP connection to another

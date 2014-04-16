@@ -33,8 +33,6 @@ class ZmqReceiver():
             # require two way communication as well)
             self.auth = ThreadAuthenticator(self.context)
             self.auth.start()
-            # TODO: Is this correct?
-            self.auth.allow('127.0.0.1')
             # Instruct authenticator to handle PLAIN requests
             self.auth.configure_plain(domain='*', passwords={username: password})
 
