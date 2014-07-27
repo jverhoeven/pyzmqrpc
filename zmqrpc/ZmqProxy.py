@@ -26,7 +26,7 @@ class ZmqProxySub2Req(ZmqReceiver):
         try:
             self.sender.send(message, time_out_waiting_for_response_in_sec=60)
         except Exception as e:
-            print e
+            logger.error(e)
         return None
 
 
@@ -43,7 +43,7 @@ class ZmqProxySub2Pub(ZmqReceiver):
         try:
             self.sender.send(message, time_out_waiting_for_response_in_sec=60)
         except Exception as e:
-            print e
+            logger.error(e)
         return None
 
 
