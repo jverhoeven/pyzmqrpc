@@ -10,6 +10,8 @@ import json
 import logging
 import time
 
+logger = logging.getLogger(__name__)
+
 
 # ZmqSender implements a ZeroMQ REQ or PUB socket to send messages out via a 
 # send function. The send function is equipped with a timeout and automatic
@@ -49,14 +51,14 @@ class ZmqSender():
                 for endpoint in self.zmq_req_endpoints:
                     self.req_socket.disconnect(endpoint)
             except Exception as e:
-                error_message = "Cannot disconnect REQ socket. Exception: {1}".format(e)
+                error_message = "Cannot disconnect REQ socket. Exception: {0}".format(e)
             try:
                 self.req_socket.close()
             except Exception as e:
                 error_message = "Cannot close REQ socket. Exception: {0}".format(e)
         self.req_socket = None
         if error_message is not None:
-            logging.error(error_message)
+            logger.error(error_message)
 
     def destroy_pub_socket(self):
         error_message = None
@@ -75,7 +77,7 @@ class ZmqSender():
                 error_message = "Cannot close PUB socket. Exception: {0}".format(e)
         self.pub_socket = None
         if error_message is not None:
-            logging.error(error_message)
+            logger.error(error_message)
 
     def create_req_socket(self):
         if self.req_socket is not None:
@@ -153,7 +155,7 @@ class ZmqSender():
                         try:
                             response_message_json = self.req_socket.recv()
                         except Exception as e:
-                            logging.error("Could not receive message from socket. Marking REQ socket to be recreated on next try. Exception: {0}".format(e))
+                            logger.error("Could not receive message from socket. Marking REQ socket to be recreated on next try. Exception: {0}".format(e))
                             self.recreate_req_socket = True
                         else:
                             return self.handle_response(response_message_json)

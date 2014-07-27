@@ -13,6 +13,8 @@ import logging
 import time
 from threading import Thread
 
+logger = logging.getLogger(__name__)
+
 
 # A ZmqReceiver class will listen on a REP or SUB socket for messages and will invoke a 'HandleIncomingMessage'
 # method to process it. Subclasses should override that. A response must be implemented for REP sockets, but
@@ -39,7 +41,7 @@ class ZmqReceiver():
     # May take up to 60 seconds to actually stop since poller has timeout of 60 seconds
     def stop(self):
         self.is_running = False
-        logging.info("Closing pub and sub sockets...")
+        logger.info("Closing pub and sub sockets...")
         if self.auth is not None:
             self.auth.stop()
 
@@ -54,6 +56,7 @@ class ZmqReceiver():
         while self.is_running:
             # In case of any socket and poller errors: recreate them. Seems to be the only right way in ZeroMQ.
             if create_new_socket_and_poller:
+                logger.debug("Creating new socket and poller")
                 if rep_socket is not None:
                     poller.unregister(rep_socket)
                     rep_socket.setsockopt(zmq.LINGER, 0)
@@ -99,7 +102,7 @@ class ZmqReceiver():
             else:
                 # This code exists due to a bug in the library for ARM devices where one subscription can block another
                 if time.time() > last_received_sample_timestamp + self.recreate_sockets_on_timeout_of_sec:
-                    logging.error("No new messages received since {0} seconds. Re-establishing subcriptions".format(self.recreate_sockets_on_timeout_of_sec))
+                    logger.error("No new messages received since {0} seconds. Re-establishing subcriptions".format(self.recreate_sockets_on_timeout_of_sec))
                     create_new_socket_and_poller = True
 
             if socket is not None:
@@ -108,7 +111,7 @@ class ZmqReceiver():
                     self.last_received_message = incoming_message
                 except Exception as e:
                     create_new_socket_and_poller = True
-                    print e
+                    logger.error(e)
                 else:
                     response_message = self.handle_incoming_message(socket, incoming_message)
 
@@ -118,7 +121,7 @@ class ZmqReceiver():
                     if response_message is not None:
                         rep_socket.send(response_message)
                 except Exception as e:
-                    print "Could not send message over socket. Recreating all sockets {0}".format(e)
+                    logger.error("Could not send message over socket. Recreating all sockets {0}".format(e))
                     create_new_socket_and_poller = True
 
         if rep_socket:

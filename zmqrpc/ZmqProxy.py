@@ -8,6 +8,9 @@ Created on Apr 8, 2014
 from ZmqReceiver import ZmqReceiver
 from ZmqSender import ZmqSender
 from threading import Thread
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # This class implements a simple message forwarding from a PUB/SUB connection to a

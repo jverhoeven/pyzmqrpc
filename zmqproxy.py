@@ -10,6 +10,8 @@ import argparse
 import signal
 import sys
 from zmqrpc.ZmqProxy import ZmqProxyRep2Pub, ZmqProxySub2Req, ZmqProxyRep2Req, ZmqProxySub2Pub
+import logging
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Proxies message either from SUB->REQ, SUB->PUB, REP->PUB or REP->REQ.')
@@ -23,17 +25,21 @@ if __name__ == '__main__':
     parser.add_argument('--password_outgoing', required=False, help='In case a password is needed for the outgoing connection (req, pub)')
 
     args = parser.parse_args()
-    print "Starting zmqproxy..."
 
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger("zmqproxy")
+    logger.setLevel(logging.DEBUG)
+
+    logger.info("Starting zmqproxy...")
     if args.sub is not None and args.rep is not None:
-        print "Fatal error: Proxy cannot listen to both SUB and REP at the same time"
+        logger.error("Fatal error: Proxy cannot listen to both SUB and REP at the same time")
     elif args.pub is not None and args.req is not None:
-        print "Fatal error: Proxy cannot send messages over both PUB and REQ sockets at the same time"
+        logger.error("Fatal error: Proxy cannot send messages over both PUB and REQ sockets at the same time")
     elif (args.sub is not None or args.rep is not None) and (args.pub is not None or args.req is not None):
 
         # Handle OS signals (like keyboard interrupt)
         def signal_handler(signal, frame):
-            print 'Ctrl+C detected. Exiting...'
+            logger.info('Ctrl+C detected. Exiting...')
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
@@ -50,4 +56,4 @@ if __name__ == '__main__':
         elif args.rep is not None and args.req is not None:
             server = ZmqProxyRep2Req(zmq_rep_bind_address=args.rep, zmq_req_connect_addresses=args.req, username_rep=args.username_incoming, password_rep=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
             server.start()
-    print "Stopped zmqproxy..."
+    logger.info("Stopped zmqproxy...")
