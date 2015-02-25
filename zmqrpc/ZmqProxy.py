@@ -87,13 +87,17 @@ class ZmqProxyThread(Thread):
         self.proxy = None
 
     def last_received_message(self):
-        return self.proxy.last_received_message
+        if self.proxy:
+            return self.proxy.last_received_message
+        return None
 
     def run(self):
-        self.proxy.run()
+        if self.proxy:
+            self.proxy.run()
 
     def stop(self):
-        self.proxy.stop()
+        if self.proxy:
+            self.proxy.stop()
 
 
 class ZmqProxySub2ReqThread(ZmqProxyThread):
@@ -118,3 +122,26 @@ class ZmqProxyRep2ReqThread(ZmqProxyThread):
     def __init__(self, zmq_rep_bind_address=None, zmq_req_connect_addresses=None, recreate_sockets_on_timeout_of_sec=600, username_rep=None, password_rep=None, username_req=None, password_req=None):
         ZmqProxyThread.__init__(self)
         self.proxy = ZmqProxyRep2Req(zmq_rep_bind_address=zmq_rep_bind_address, zmq_req_connect_addresses=zmq_req_connect_addresses, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username_rep=username_rep, password_rep=password_rep, username_req=username_req, password_req=password_req)
+
+
+# This proxy class uses a 'hidden' pub/sub socket to buffer any messages from REP to REQ socket 
+# in case the REQ socket is offline.
+class ZmqBufferedProxyRep2ReqThread(ZmqProxyThread):
+    def __init__(self, zmq_rep_bind_address=None, zmq_req_connect_addresses=None, buffered_pub_address="tcp://*:59878", buffered_sub_address="tcp://localhost:59878", recreate_sockets_on_timeout_of_sec=600, username_rep=None, password_rep=None, username_req=None, password_req=None):
+        ZmqProxyThread.__init__(self)
+        self.proxy1 = ZmqProxyRep2PubThread(zmq_rep_bind_address=zmq_rep_bind_address, zmq_pub_bind_address=buffered_pub_address, recreate_sockets_on_timeout_of_sec=100000, username_rep=username_rep, password_rep=password_rep)
+        self.proxy2 = ZmqProxySub2ReqThread(zmq_sub_connect_addresses=[buffered_sub_address], zmq_req_connect_addresses=zmq_req_connect_addresses, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username_req=username_req, password_req=password_req)
+
+    def start(self):
+        self.proxy1.start()
+        self.proxy2.start()
+        super(ZmqProxyThread, self).start()
+
+    def stop(self):
+        self.proxy1.stop()
+        self.proxy2.stop()
+
+    def join(self):
+        self.proxy1.join()
+        self.proxy2.join()
+        super(ZmqProxyThread, self).join()

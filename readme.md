@@ -43,7 +43,7 @@ Starts a loop listening via a SUB or REP socket for new messages. Multiple SUB e
 ## ZmqClient
 Upon creation it starts a PUB socket and/or creates a REQ socket. The REQ socket may point to multiple end-points, which then use round-robin message delivery. The ZmqClient implements a 'send' method that sends a message.
 ## ZmqProxy
-Forwards messages from a SUB --> REQ socket or from a PUB --> REP socket using 
+Forwards messages from a SUB --> REQ socket or from a PUB --> REP socket.
 ## ZmqRpcClient
 Invokes a remotely implemented method over a PUB or REQ socket. For PUB sockets no response messages can be expected.
 ## ZmqRpcServer
@@ -128,6 +128,21 @@ Example with invoking method in REP/REQ. The difference with PUB/SUB is that thi
         # Clean up
         server.stop()
         server.join()
+
+# Available standard proxies
+A number of already provided proxies are available:
+* REQ to REQ by means of ZmqProxySub2ReqThread
+
+* SUB to PUB by means of ZmqProxySub2PubThread
+* REP to PUB by means of ZmqProxyRep2PubThread
+* REP to REQ by means of ZmqProxyRep2ReqThread
+* Buffered REP to REQ via ZmqBufferedProxyRep2ReqThread
+
+Each of these proxies will take a message from the input format/socket and proxy it to the output socket. One model could be to collect all samples from all subprocesses on a site and multiplex them via the proxy in a reliable manner over a REP/REQ socket.
+
+Note that when a PUB/SUB connection is used, there is no return message or in case of method invocation, any function response is discarded.
+
+The buffered REP/REQ proxy quietly uses a PUB/SUB socket to introduce a means to buffer messages and method invocations.
 
 # Known issues
 * Serialization is very limited and only supports types that can be serialized over JSON.
