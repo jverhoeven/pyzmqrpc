@@ -8,7 +8,9 @@ Created on Apr 8, 2014
 import json
 from ZmqReceiver import ZmqReceiver
 from threading import Thread
+import logging
 
+logger = logging.getLogger("zmqrpc")
 
 # The ZmqRpcServer implements a ZmqReceiver and extends it with the ability to host one or more methods
 # that can be invoked by a ZmqRpcClient. In case a PUB/SUB connection is used, no reponse is provided.
@@ -31,10 +33,12 @@ class ZmqRpcServer(ZmqReceiver):
         except Exception as e:
             status_code = 400
             status_message = "Incorrectly marshalled function. Incoming message is no proper json formatted string. Exception: {0}".format(e)
+            logger.warning(status_message)
         else:
             if "function" not in incoming_message:
                 status_code = 450
                 status_message = "Incorrectly marshalled function. No function name provided."
+                logger.warning(status_message)
             else:
                 function_name = incoming_message["function"]
                 parameters = None
@@ -43,6 +47,7 @@ class ZmqRpcServer(ZmqReceiver):
                 if function_name not in self.rpc_functions:
                     status_code = 451
                     status_message = "Function '{0}' is not implemented on server. Check rpc_functions on server if it contains the function name".format(function_name)
+                    logger.warning(status_message)
                 else:
                     try:
                         if parameters is None:
@@ -52,6 +57,8 @@ class ZmqRpcServer(ZmqReceiver):
                     except Exception as e:
                         status_code = 463
                         status_message = "Exception raised when calling function {0}. Exception: {1} ".format(function_name, e)
+                        logger.warning(status_message)
+                        logger.exception(e)
 
         return self.create_response_message(status_code, status_message, response_message)
 

@@ -6,7 +6,10 @@ Created on Apr 8, 2014
 @copyright: MIT license, see http://opensource.org/licenses/MIT
 '''
 import json
+import logging
 from ZmqSender import ZmqSender
+
+logger = logging.getLogger("zmqrpc")
 
 
 # The ZmqRpcClient class implements a ZmqSender class but extends it with the ability

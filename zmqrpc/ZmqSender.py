@@ -10,7 +10,7 @@ import json
 import logging
 import time
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("zmqrpc")
 
 
 # ZmqSender implements a ZeroMQ REQ or PUB socket to send messages out via a 
@@ -42,7 +42,7 @@ class ZmqSender():
             try:
                 self.poller.unregister(self.req_socket)
             except Exception as e:
-                error_message = "Cannot unregister REQ socket to poller"
+                error_message = "Cannot unregister REQ socket to poller. Exception: {0}".format(e)
             try:
                 self.req_socket.setsockopt(zmq.LINGER, 0)
             except Exception as e:
@@ -161,7 +161,7 @@ class ZmqSender():
                             return self.handle_response(response_message_json)
                 # Some unexpected socket related error occurred. Recreate the REQ socket.
                 self.recreate_req_socket = True
-                raise Exception("No response received on ZMQ Request for samples to end point {0} in {1} seconds. Discarding message. Marking REQ socket to be recreated on next try.".format(self.zmq_req_endpoints, time_out_waiting_for_response_in_sec))
+                raise Exception("No response received on ZMQ Request to end point {0} in {1} seconds. Discarding message. Marking REQ socket to be recreated on next try.".format(self.zmq_req_endpoints, time_out_waiting_for_response_in_sec))
 
     def send(self, message, time_out_waiting_for_response_in_sec=60):
         # Create sockets if needed. Raise an exception if any problems are encountered

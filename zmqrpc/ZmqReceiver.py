@@ -13,7 +13,7 @@ import logging
 import time
 from threading import Thread
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("zmqrpc")
 
 
 # A ZmqReceiver class will listen on a REP or SUB socket for messages and will invoke a 'HandleIncomingMessage'
@@ -102,7 +102,7 @@ class ZmqReceiver():
             else:
                 # This code exists due to a bug in the library for ARM devices where one subscription can block another
                 if time.time() > last_received_sample_timestamp + self.recreate_sockets_on_timeout_of_sec:
-                    logger.error("No new messages received since {0} seconds. Re-establishing subcriptions".format(self.recreate_sockets_on_timeout_of_sec))
+                    logger.debug("No new messages received since {0} seconds. Re-establishing subcriptions".format(self.recreate_sockets_on_timeout_of_sec))
                     create_new_socket_and_poller = True
 
             if socket is not None:

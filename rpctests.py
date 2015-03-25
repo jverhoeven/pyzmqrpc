@@ -13,7 +13,7 @@ from zmqrpc.ZmqRpcServer import ZmqRpcServerThread
 from zmqrpc.ZmqRpcClient import ZmqRpcClient
 import time
 import unittest
-
+import logging
 
 # Track state from invoking method in a special class since this is in global scope.
 class TestState():
@@ -26,6 +26,9 @@ test_state = TestState()
 def invoke_test(param1, param2):
     test_state.last_invoked_param1 = param1
     return "{0}:{1}".format(param1, param2)
+
+def invoke_test_that_throws_exception(param1, param2):
+    raise Exception("Something went wrong")
 
 
 class TestZmqPackage(unittest.TestCase):
@@ -176,6 +179,42 @@ class TestZmqPackage(unittest.TestCase):
         time.sleep(1)
 
         self.assertEquals(response, "value1:value2")
+
+    def test_rpc1_req_rep_invalid_function(self):
+        # RPC invoke method over REQ/REP sockets
+        print "Test if invoking a non existing method throws proper error over REQ/REP RPC socket, includes a username/password"
+        client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:55000"], username="username", password="password")
+        server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:55000", rpc_functions={"invoke_test": invoke_test}, username="username", password="password")
+        server_thread.start()
+
+        try:
+            client.invoke(function_name="invoke_test_does_not_exist", function_parameters={"param1": "value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        except Exception as e:
+            self.assertEquals(e.message, "Function 'invoke_test_does_not_exist' is not implemented on server. Check rpc_functions on server if it contains the function name")
+
+        server_thread.stop()
+        server_thread.join()
+        client.destroy()
+        # Cleaning up sockets takes some time
+        time.sleep(1)
+
+    def test_rpc1_req_rep_exception_raised(self):
+        # RPC invoke method over REQ/REP sockets
+        print "Test if invoking an existing method that throws an exception over REQ/REP RPC socket, includes a username/password"
+        client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:55000"], username="username", password="password")
+        server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:55000", rpc_functions={"invoke_test_that_throws_exception": invoke_test_that_throws_exception}, username="username", password="password")
+        server_thread.start()
+
+        try:
+            client.invoke(function_name="invoke_test_that_throws_exception", function_parameters={"param1": "value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        except Exception as e:
+            self.assertEqual(e.message, "Exception raised when calling function invoke_test_that_throws_exception. Exception: Something went wrong ")
+            
+        server_thread.stop()
+        server_thread.join()
+        client.destroy()
+        # Cleaning up sockets takes some time
+        time.sleep(1)
 
     def test_rpc1_pub_sub(self):
         # RPC invoke method over REQ/REP sockets
@@ -332,4 +371,8 @@ class TestZmqPackage(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s  %(message)s')
+    logger = logging.getLogger("zmprpc")
+    logger.setLevel(logging.DEBUG)
     unittest.main()
+    
