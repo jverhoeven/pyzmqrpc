@@ -21,7 +21,7 @@ class ZmqProxySub2Req(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_sub_connect_addresses=zmq_sub_connect_addresses, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username=username_sub, password=password_sub)
         self.sender = ZmqSender(zmq_req_endpoints=zmq_req_connect_addresses, username=username_req, password=password_req)
 
-    def handle_incoming_message(self, socket, message):
+    def handle_incoming_message(self, message):
         # We don't care for the response, since we cannot pass it back via the pub socket or we got none from a pub socket
         try:
             self.sender.send(message, time_out_waiting_for_response_in_sec=60)
@@ -38,7 +38,7 @@ class ZmqProxySub2Pub(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_sub_connect_addresses=zmq_sub_connect_addresses, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username=username_sub, password=password_sub)
         self.sender = ZmqSender(zmq_pub_endpoint=zmq_pub_bind_address, username=username_pub, password=username_pub)
 
-    def handle_incoming_message(self, socket, message):
+    def handle_incoming_message(self, message):
         # We don't care for the response, since we cannot pass it back via the pub socket or we got none from a pub socket
         try:
             self.sender.send(message, time_out_waiting_for_response_in_sec=60)
@@ -55,7 +55,7 @@ class ZmqProxyRep2Pub(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_rep_bind_address=zmq_rep_bind_address, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username=username_rep, password=password_rep)
         self.sender = ZmqSender(zmq_req_endpoints=None, zmq_pub_endpoint=zmq_pub_bind_address, username=username_pub, password=password_pub)
 
-    def handle_incoming_message(self, socket, message):
+    def handle_incoming_message(self, message):
         try:
             self.sender.send(message, time_out_waiting_for_response_in_sec=60)
             # Pub socket does not provide response message, so return OK message
@@ -72,7 +72,7 @@ class ZmqProxyRep2Req(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_rep_bind_address=zmq_rep_bind_address, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username=username_rep, password=password_rep)
         self.sender = ZmqSender(zmq_req_endpoints=zmq_req_connect_addresses, username=username_req, password=password_req)
 
-    def handle_incoming_message(self, socket, message):
+    def handle_incoming_message(self, message):
         # Pass on the response from the forwarding socket.
         try:
             response_message = self.sender.send(message, time_out_waiting_for_response_in_sec=60)

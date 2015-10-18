@@ -49,10 +49,12 @@ class ZmqSender():
                 error_message = "Cannot set LINGER socket option. Exception: {0}".format(e)
             try:
                 for endpoint in self.zmq_req_endpoints:
+                    logger.debug("Disconnect REQ socket to {0}".format(endpoint))
                     self.req_socket.disconnect(endpoint)
             except Exception as e:
                 error_message = "Cannot disconnect REQ socket. Exception: {0}".format(e)
             try:
+                logger.debug("Close REQ socket to {0}".format(self.zmq_req_endpoints))
                 self.req_socket.close()
             except Exception as e:
                 error_message = "Cannot close REQ socket. Exception: {0}".format(e)
@@ -68,10 +70,17 @@ class ZmqSender():
             except Exception as e:
                 error_message = "Cannot set LINGER socket option. Exception: {0}".format(e)
             try:
-                self.pub_socket.unbind(self.zmq_pub_endpoint)
+                address = self.zmq_pub_endpoint
+                # Since some recent version of pyzmq it does not accept unbind
+                # of an address with '*'. Replace it with 0.0.0.0
+                if '*' in address:
+                    address = address.replace('*', '0.0.0.0')
+                logger.debug("Unbind PUB socket to {0}".format(self.zmq_pub_endpoint))
+                self.pub_socket.unbind(address)
             except Exception as e:
                 raise Exception("Cannot unbind PUB socket from {0}. Exception: {1}".format(self.zmq_pub_endpoint, e))
             try:
+                logger.debug("Close PUB socket to {0}".format(self.zmq_pub_endpoint))
                 self.pub_socket.close()
             except Exception as e:
                 error_message = "Cannot close PUB socket. Exception: {0}".format(e)
@@ -90,6 +99,7 @@ class ZmqSender():
                 self.req_socket.plain_password = self.password
             try:
                 for endpoint in self.zmq_req_endpoints:
+                    logger.debug("Connect REQ socket to {0}".format(endpoint))
                     self.req_socket.connect(endpoint)
             except Exception as e:
                 raise Exception("Cannot connect REQ socket to {0}. Exception: {1}".format(self.zmq_req_endpoints, e))
@@ -110,6 +120,7 @@ class ZmqSender():
             # Make sure we buffer enough (100000 messages) in case of network troubles...
             self.pub_socket.setsockopt(zmq.SNDHWM, 100000)
             try:
+                logger.debug("Bind PUB socket to {0}".format(self.zmq_pub_endpoint))
                 self.pub_socket.bind(self.zmq_pub_endpoint)
             except Exception as e:
                 raise Exception("Cannot bind PUB socket to {0}. Exception: {1}".format(self.zmq_pub_endpoint, e))
@@ -179,6 +190,9 @@ class ZmqSender():
         # Any errors in the following lines will throw an error that must be catched
         self._send_over_pub_socket(message)
         return self._send_over_req_socket(message, time_out_waiting_for_response_in_sec)
+    
+    def send_heartbeat(self):
+        self.send("zmq_sub_heartbeat")
 
     def destroy(self):
         self.destroy_req_socket()

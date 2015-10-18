@@ -129,6 +129,17 @@ Example with invoking method in REP/REQ. The difference with PUB/SUB is that thi
         server.stop()
         server.join()
 
+## New since 1.5.0 - Per socket heartbeats
+In order to detect silently disconnected SUB sockets (network failures or otherwise), it is now possible to (optionally) define a heartbeat timeout per SUB socket. Updated example:
+
+        server = ZmqRpcServerThread(
+            zmq_sub_connect_addresses=[("tcp://localhost:30000", 60)],
+            rpc_functions={"test_method": test_method},
+            username="test",
+            password="test")
+
+Per SUB socket address a tuple can be specified that holds the address as the first element and the heartbeat timeout as the second. Note that that the responsibility to send an heartbeat 
+
 # Available standard proxies
 A number of already provided proxies are available:
 * REQ to REQ by means of ZmqProxySub2ReqThread
@@ -147,8 +158,20 @@ The buffered REP/REQ proxy quietly uses a PUB/SUB socket to introduce a means to
 # Known issues
 * Serialization is very limited and only supports types that can be serialized over JSON.
 * Only localhost type of testing done with passwords. Not sure if auth works over remote connections
-* Increased socket recreation timeouts to 10 minutes
-* For some reason it seems the installer dependency to pyzmq is not taken into account over a pip installation via Pypi. It does work via local tar.gz install.
 
 # Notes
 Please note that this implementation is very pre-mature, although it works fine for me in my own project and has operated stable for months.
+
+# Change log
+## Version 1.5.0
+* Improved ability to use heartbeats to avoid silently failing ZMQ sockets. Timeouts can now be set per SUB socket. Before this version a reset would be for all addresses in the SUB address list provided. This would allow a single socket to get disconnected and never reconnected because the other SUB sockets were still getting messages.
+* Replace * with 0.0.0.0 in socket.unbind, which seems no longer supported.
+
+## Version 1.0.1
+Central logging for entire zmqrpc facility. Also logs exceptions for easier debugging.
+
+## Version 1.0.0
+Added a buffered REQ/REQ proxy which uses PUB/SUB internally. Bumped version number to stable release number since the library worked fine for months and code and tests are now at a more mature level.
+
+## Version 0.1.9 and before
+Internal testing.

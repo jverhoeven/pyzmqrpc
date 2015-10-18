@@ -24,7 +24,7 @@ class ZmqRpcServer(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_rep_bind_address, zmq_sub_connect_addresses, recreate_sockets_on_timeout_of_sec, username, password)
         self.rpc_functions = rpc_functions
 
-    def handle_incoming_message(self, socket, incoming_message):
+    def handle_incoming_message(self, incoming_message):
         status_code = 200
         status_message = "OK"
         response_message = None
@@ -67,7 +67,7 @@ class ZmqRpcServer(ZmqReceiver):
 class ZmqRpcServerThread(Thread):
     def __init__(self, zmq_rep_bind_address=None, zmq_sub_connect_addresses=None, rpc_functions=None, recreate_sockets_on_timeout_of_sec=60, username=None, password=None):
         Thread.__init__(self)
-        self.server = ZmqRpcServer(zmq_rep_bind_address=zmq_rep_bind_address, zmq_sub_connect_addresses=zmq_sub_connect_addresses, rpc_functions=rpc_functions, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username=username, password=password)
+        self.server = ZmqRpcServer(zmq_rep_bind_address, zmq_sub_connect_addresses, rpc_functions, recreate_sockets_on_timeout_of_sec, username, password)
 
     def last_received_message(self):
         return self.server.last_received_message
