@@ -25,6 +25,9 @@ class ZmqRpcServer(ZmqReceiver):
         self.rpc_functions = rpc_functions
 
     def handle_incoming_message(self, incoming_message):
+        if incoming_message == "zmq_sub_heartbeat":
+            return None
+        
         status_code = 200
         status_message = "OK"
         response_message = None

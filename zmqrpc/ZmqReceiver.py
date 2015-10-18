@@ -169,7 +169,8 @@ class ZmqReceiver():
             for sub_socket in self.sub_sockets:
                 incoming_message = sub_socket.recv(socks)
                 if incoming_message is not None:
-                    self.last_received_message = incoming_message
+                    if incoming_message != "zmq_sub_heartbeat":
+                        self.last_received_message = incoming_message
                     logger.debug("Got info from SUB socket")
                     try:
                         self.handle_incoming_message(incoming_message)

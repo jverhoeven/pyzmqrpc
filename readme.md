@@ -163,6 +163,9 @@ The buffered REP/REQ proxy quietly uses a PUB/SUB socket to introduce a means to
 Please note that this implementation is very pre-mature, although it works fine for me in my own project and has operated stable for months.
 
 # Change log
+## Version 1.5.1
+* Fixed heartbeat reception in ZmqRpcServer.
+
 ## Version 1.5.0
 * Improved ability to use heartbeats to avoid silently failing ZMQ sockets. Timeouts can now be set per SUB socket. Before this version a reset would be for all addresses in the SUB address list provided. This would allow a single socket to get disconnected and never reconnected because the other SUB sockets were still getting messages.
 * Replace * with 0.0.0.0 in socket.unbind, which seems no longer supported.

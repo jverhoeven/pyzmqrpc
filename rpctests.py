@@ -269,9 +269,17 @@ class TestZmqPackage(unittest.TestCase):
 
         self.assertEqual(receiver_thread.last_received_message(), 'test')
         
-        # Now send another but with 2 seconds delay, which should be ok
+        # Now send another but with 2 seconds delay, which should be ok, followed by 4 heartbeats.
+        # Socket should not be refreshed.
         sender.send("test2")
         time.sleep(2)
+        sender.send_heartbeat()
+        time.sleep(2)
+        sender.send_heartbeat()
+        time.sleep(2)
+        sender.send_heartbeat()
+        time.sleep(2)
+        sender.send_heartbeat()
         
         self.assertEqual(receiver_thread.last_received_message(), 'test2')
         self.assertEqual(receiver_thread.receiver.sub_sockets[0].zmq_socket, first_socket)
@@ -294,6 +302,56 @@ class TestZmqPackage(unittest.TestCase):
         receiver_thread.stop()
         receiver_thread.join()
         sender.destroy()
+        # Cleaning up sockets takes some time
+        time.sleep(1)
+
+    def test_10a_pub_sub_timeout_per_socket_using_heartbeat_function(self):
+        # Basic send/receive over PUB/SUB sockets
+        print "Test a timeout per socket with RPC using heartbeat"
+        client = ZmqRpcClient(zmq_pub_endpoint="tcp://*:47001")
+        server_thread = ZmqRpcServerThread(zmq_sub_connect_addresses=[("tcp://localhost:47001", 3)], rpc_functions={"invoke_test": invoke_test}, recreate_sockets_on_timeout_of_sec=10)
+        server_thread.start()
+        # Slow joiner
+        time.sleep(0.1)
+
+        first_socket = server_thread.server.sub_sockets[0].zmq_socket
+        client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        # Take 2 seconds to see if it works in case of within the 3 seconds window. 
+        time.sleep(2)
+
+        self.assertEquals(test_state.last_invoked_param1, "testxx-value1")
+        
+        # Now send another but with 2 seconds delay, which should be ok, then followed by a couple of heartbeats which should keep the existing socket.
+        client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value2", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        time.sleep(2)
+        client.send_heartbeat()
+        time.sleep(2)
+        client.send_heartbeat()
+        time.sleep(2)
+        client.send_heartbeat()
+        time.sleep(2)
+        
+        self.assertEquals(test_state.last_invoked_param1, "testxx-value2")
+        self.assertEqual(server_thread.server.sub_sockets[0].zmq_socket, first_socket)
+
+        # Now send another but with 4 seconds delay, which should restart the sockets, but message should arrive
+        client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value3", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        time.sleep(4)
+        
+        self.assertEquals(test_state.last_invoked_param1, "testxx-value3")
+        second_socket = server_thread.server.sub_sockets[0].zmq_socket
+        self.assertNotEqual(second_socket, first_socket)
+
+        # Now send another but with 2 seconds delay, which should be ok
+        client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value4", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
+        time.sleep(2)
+        
+        self.assertEquals(test_state.last_invoked_param1, "testxx-value4")
+        self.assertEqual(server_thread.server.sub_sockets[0].zmq_socket, second_socket)
+
+        server_thread.stop()
+        server_thread.join()
+        client.destroy()
         # Cleaning up sockets takes some time
         time.sleep(1)
 
