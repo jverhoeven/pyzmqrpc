@@ -7,7 +7,7 @@ Created on Apr 8, 2014
 '''
 import json
 import logging
-from ZmqSender import ZmqSender
+from .ZmqSender import ZmqSender
 
 logger = logging.getLogger("zmqrpc")
 

@@ -6,20 +6,23 @@ Created on Mar 31, 2014
 @copyright: MIT license, see http://opensource.org/licenses/MIT
 
 '''
+from __future__ import print_function
+
+import time
+import logging
+import unittest
+
 from zmqrpc.ZmqProxy import ZmqProxyRep2PubThread, ZmqProxySub2ReqThread, ZmqProxyRep2ReqThread, ZmqProxySub2PubThread, ZmqBufferedProxyRep2ReqThread
 from zmqrpc.ZmqReceiver import ZmqReceiverThread
 from zmqrpc.ZmqSender import ZmqSender
 from zmqrpc.ZmqRpcServer import ZmqRpcServerThread
 from zmqrpc.ZmqRpcClient import ZmqRpcClient
-import time
-import unittest
-import logging
 
 logger = logging.getLogger('zmqrpc')
 logger.setLevel(logging.DEBUG)
 
 # Track state from invoking method in a special class since this is in global scope.
-class TestState():
+class TestState(object):
     def __init__(self):
         self.last_invoked_param1 = None
 
@@ -31,29 +34,30 @@ def invoke_test(param1, param2):
     return "{0}:{1}".format(param1, param2)
 
 def invoke_test_that_throws_exception(param1, param2):
+    del param1 # Unused
+    del param2 # Unused
     raise Exception("Something went wrong")
 
 
 class TestZmqPackage(unittest.TestCase):
     def test_01_req_rep_sockets(self):
         # Basic send/receive over REQ/REP sockets
-        print "Test if sending works over REQ/REP socket, includes a username/password"
+        print("Test if sending works over REQ/REP socket, includes a username/password")
         sender = ZmqSender(zmq_req_endpoints=["tcp://localhost:47000"], username="username", password="password")
         receiver_thread = ZmqReceiverThread(zmq_rep_bind_address="tcp://*:47000", username="username", password="password")
         receiver_thread.start()
 
         sender.send("test", time_out_waiting_for_response_in_sec=3)
-
         self.assertEquals(receiver_thread.last_received_message(), 'test')
 
-        print "Test if sending wrong password over REP/REQ connection results in error (actually timeout)"
+        print("Test if sending wrong password over REP/REQ connection results in error (actually timeout)")
         sender = ZmqSender(zmq_req_endpoints=["tcp://localhost:47000"], username="username", password="wrongpassword")
         try:
             sender.send("test", time_out_waiting_for_response_in_sec=3)
-            print "Error. Did get answer from remote system which was not expected"
+            print("Error. Did get answer from remote system which was not expected")
         except:
             # Could not send message, which is ok in this case
-            print "Success."
+            print("Success.")
 
         receiver_thread.stop()
         receiver_thread.join()
@@ -64,7 +68,7 @@ class TestZmqPackage(unittest.TestCase):
     @unittest.skip("do not know why this does not work. Something with inproc address")
     def test_02_req_rep_sockets_over_inproc(self):
         # Basic send/receive over REQ/REP sockets
-        print "Test if sending works over REQ/REP socket using inproc, includes a username/password"
+        print("Test if sending works over REQ/REP socket using inproc, includes a username/password")
         sender = ZmqSender(zmq_req_endpoints=["inproc://test"], username="username", password="password")
         receiver_thread = ZmqReceiverThread(zmq_rep_bind_address="inproc://test", username="username", password="password")
         receiver_thread.start()
@@ -73,14 +77,14 @@ class TestZmqPackage(unittest.TestCase):
 
         self.assertEquals(receiver_thread.last_received_message(), 'test')
 
-        print "Test if sending wrong password over REP/REQ connection results in error (actually timeout)"
+        print("Test if sending wrong password over REP/REQ connection results in error (actually timeout)")
         sender = ZmqSender(zmq_req_endpoints=["inproc://test"], username="username", password="wrongpassword")
         try:
             sender.send("test", time_out_waiting_for_response_in_sec=3)
-            print "Error. Did get answer from remote system which was not expected"
+            print("Error. Did get answer from remote system which was not expected")
         except:
             # Could not send message, which is ok in this case
-            print "Success."
+            print("Success.")
 
         receiver_thread.stop()
         receiver_thread.join()
@@ -90,7 +94,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_03_pub_sub_without_passwords(self):
         # Basic send/receive over PUB/SUB sockets
-        print "Test if sending works over PUB/SUB sockets without passwords"
+        print("Test if sending works over PUB/SUB sockets without passwords")
         sender = ZmqSender(zmq_pub_endpoint="tcp://*:47001")
         receiver_thread = ZmqReceiverThread(zmq_sub_connect_addresses=["tcp://localhost:47001"])
         receiver_thread.start()
@@ -112,7 +116,7 @@ class TestZmqPackage(unittest.TestCase):
     @unittest.skip("do not know why this does not work. Something with inproc address")
     def test_04_pub_sub_without_passwords_over_inproc(self):
         # Basic send/receive over PUB/SUB sockets
-        print "Test if sending works over PUB/SUB sockets without passwords"
+        print("Test if sending works over PUB/SUB sockets without passwords")
         sender = ZmqSender(zmq_pub_endpoint="inproc://my_test")
         receiver_thread = ZmqReceiverThread(zmq_sub_connect_addresses=["inproc://my_test"])
         receiver_thread.start()
@@ -133,7 +137,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_05_rpc1_req_rep(self):
         # RPC invoke method over REQ/REP sockets
-        print "Test if invoking a method works over REQ/REP RPC socket, includes a username/password"
+        print("Test if invoking a method works over REQ/REP RPC socket, includes a username/password")
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:55000"], username="username", password="password")
         server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:55000", rpc_functions={"invoke_test": invoke_test}, username="username", password="password")
         server_thread.start()
@@ -150,7 +154,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_06_rpc1_req_rep_invalid_function(self):
         # RPC invoke method over REQ/REP sockets
-        print "Test if invoking a non existing method throws proper error over REQ/REP RPC socket, includes a username/password"
+        print("Test if invoking a non existing method throws proper error over REQ/REP RPC socket, includes a username/password")
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:55000"], username="username", password="password")
         server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:55000", rpc_functions={"invoke_test": invoke_test}, username="username", password="password")
         server_thread.start()
@@ -158,7 +162,7 @@ class TestZmqPackage(unittest.TestCase):
         try:
             client.invoke(function_name="invoke_test_does_not_exist", function_parameters={"param1": "value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
         except Exception as e:
-            self.assertEquals(e.message, "Function 'invoke_test_does_not_exist' is not implemented on server. Check rpc_functions on server if it contains the function name")
+            self.assertEquals(str(e), "Function 'invoke_test_does_not_exist' is not implemented on server. Check rpc_functions on server if it contains the function name")
 
         server_thread.stop()
         server_thread.join()
@@ -168,7 +172,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_07_rpc1_req_rep_exception_raised(self):
         # RPC invoke method over REQ/REP sockets
-        print "Test if invoking an existing method that throws an exception over REQ/REP RPC socket, includes a username/password"
+        print("Test if invoking an existing method that throws an exception over REQ/REP RPC socket, includes a username/password")
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:55000"], username="username", password="password")
         server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:55000", rpc_functions={"invoke_test_that_throws_exception": invoke_test_that_throws_exception}, username="username", password="password")
         server_thread.start()
@@ -176,8 +180,8 @@ class TestZmqPackage(unittest.TestCase):
         try:
             client.invoke(function_name="invoke_test_that_throws_exception", function_parameters={"param1": "value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
         except Exception as e:
-            self.assertEqual(e.message, "Exception raised when calling function invoke_test_that_throws_exception. Exception: Something went wrong ")
-            
+            self.assertEqual(str(e), "Exception raised when calling function invoke_test_that_throws_exception. Exception: Something went wrong ")
+
         server_thread.stop()
         server_thread.join()
         client.destroy()
@@ -186,7 +190,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_08_rpc1_pub_sub(self):
         # RPC invoke method over REQ/REP sockets
-        print "Test if invoking a method works over PUB/SUB RPC socket"
+        print("Test if invoking a method works over PUB/SUB RPC socket")
         client = ZmqRpcClient(zmq_pub_endpoint="tcp://*:54000")
         server_thread = ZmqRpcServerThread(zmq_sub_connect_addresses=["tcp://localhost:54000"], rpc_functions={"invoke_test": invoke_test}, username="username", password="password")
         server_thread.start()
@@ -211,7 +215,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_09_pub_sub_timeout(self):
         # Basic send/receive over PUB/SUB sockets
-        print "Test a timeout"
+        print("Test a timeout")
         sender = ZmqSender(zmq_pub_endpoint="tcp://*:47001")
         receiver_thread = ZmqReceiverThread(zmq_sub_connect_addresses=["tcp://localhost:47001"], recreate_sockets_on_timeout_of_sec=3)
         receiver_thread.start()
@@ -220,22 +224,22 @@ class TestZmqPackage(unittest.TestCase):
 
         first_socket = receiver_thread.receiver.sub_sockets[0].zmq_socket
         sender.send("test")
-        # Take 2 seconds to see if it works in case of within the 3 seconds window. 
+        # Take 2 seconds to see if it works in case of within the 3 seconds window.
         time.sleep(2)
 
         self.assertEqual(receiver_thread.last_received_message(), 'test')
-        
+
         # Now send another but with 2 seconds delay, which should be ok
         sender.send("test2")
         time.sleep(2)
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test2')
         self.assertEqual(receiver_thread.receiver.sub_sockets[0].zmq_socket, first_socket)
 
         # Now send another but with 4 seconds delay, which should restart the sockets, but message should arrive
         sender.send("test3")
         time.sleep(4)
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test3')
         second_socket = receiver_thread.receiver.sub_sockets[0].zmq_socket
         self.assertNotEqual(second_socket, first_socket)
@@ -243,7 +247,7 @@ class TestZmqPackage(unittest.TestCase):
         # Now send another but with 2 seconds delay, which should be ok
         sender.send("test4")
         time.sleep(2)
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test4')
         self.assertEqual(receiver_thread.receiver.sub_sockets[0].zmq_socket, second_socket)
 
@@ -255,7 +259,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_10_pub_sub_timeout_per_socket(self):
         # Basic send/receive over PUB/SUB sockets
-        print "Test a timeout per socket"
+        print("Test a timeout per socket")
         sender = ZmqSender(zmq_pub_endpoint="tcp://*:47001")
         receiver_thread = ZmqReceiverThread(zmq_sub_connect_addresses=[("tcp://localhost:47001", 3)], recreate_sockets_on_timeout_of_sec=10)
         receiver_thread.start()
@@ -264,11 +268,11 @@ class TestZmqPackage(unittest.TestCase):
 
         first_socket = receiver_thread.receiver.sub_sockets[0].zmq_socket
         sender.send("test")
-        # Take 2 seconds to see if it works in case of within the 3 seconds window. 
+        # Take 2 seconds to see if it works in case of within the 3 seconds window.
         time.sleep(2)
 
         self.assertEqual(receiver_thread.last_received_message(), 'test')
-        
+
         # Now send another but with 2 seconds delay, which should be ok, followed by 4 heartbeats.
         # Socket should not be refreshed.
         sender.send("test2")
@@ -280,14 +284,14 @@ class TestZmqPackage(unittest.TestCase):
         sender.send_heartbeat()
         time.sleep(2)
         sender.send_heartbeat()
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test2')
         self.assertEqual(receiver_thread.receiver.sub_sockets[0].zmq_socket, first_socket)
 
         # Now send another but with 4 seconds delay, which should restart the sockets, but message should arrive
         sender.send("test3")
         time.sleep(4)
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test3')
         second_socket = receiver_thread.receiver.sub_sockets[0].zmq_socket
         self.assertNotEqual(second_socket, first_socket)
@@ -295,7 +299,7 @@ class TestZmqPackage(unittest.TestCase):
         # Now send another but with 2 seconds delay, which should be ok
         sender.send("test4")
         time.sleep(2)
-        
+
         self.assertEqual(receiver_thread.last_received_message(), 'test4')
         self.assertEqual(receiver_thread.receiver.sub_sockets[0].zmq_socket, second_socket)
 
@@ -307,7 +311,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_10a_pub_sub_timeout_per_socket_using_heartbeat_function(self):
         # Basic send/receive over PUB/SUB sockets
-        print "Test a timeout per socket with RPC using heartbeat"
+        print("Test a timeout per socket with RPC using heartbeat")
         client = ZmqRpcClient(zmq_pub_endpoint="tcp://*:47001")
         server_thread = ZmqRpcServerThread(zmq_sub_connect_addresses=[("tcp://localhost:47001", 3)], rpc_functions={"invoke_test": invoke_test}, recreate_sockets_on_timeout_of_sec=10)
         server_thread.start()
@@ -316,11 +320,11 @@ class TestZmqPackage(unittest.TestCase):
 
         first_socket = server_thread.server.sub_sockets[0].zmq_socket
         client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value1", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
-        # Take 2 seconds to see if it works in case of within the 3 seconds window. 
+        # Take 2 seconds to see if it works in case of within the 3 seconds window.
         time.sleep(2)
 
         self.assertEquals(test_state.last_invoked_param1, "testxx-value1")
-        
+
         # Now send another but with 2 seconds delay, which should be ok, then followed by a couple of heartbeats which should keep the existing socket.
         client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value2", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
         time.sleep(2)
@@ -330,14 +334,14 @@ class TestZmqPackage(unittest.TestCase):
         time.sleep(2)
         client.send_heartbeat()
         time.sleep(2)
-        
+
         self.assertEquals(test_state.last_invoked_param1, "testxx-value2")
         self.assertEqual(server_thread.server.sub_sockets[0].zmq_socket, first_socket)
 
         # Now send another but with 4 seconds delay, which should restart the sockets, but message should arrive
         client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value3", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
         time.sleep(4)
-        
+
         self.assertEquals(test_state.last_invoked_param1, "testxx-value3")
         second_socket = server_thread.server.sub_sockets[0].zmq_socket
         self.assertNotEqual(second_socket, first_socket)
@@ -345,7 +349,7 @@ class TestZmqPackage(unittest.TestCase):
         # Now send another but with 2 seconds delay, which should be ok
         client.invoke(function_name="invoke_test", function_parameters={"param1": "testxx-value4", "param2": "value2"}, time_out_waiting_for_response_in_sec=3)
         time.sleep(2)
-        
+
         self.assertEquals(test_state.last_invoked_param1, "testxx-value4")
         self.assertEqual(server_thread.server.sub_sockets[0].zmq_socket, second_socket)
 
@@ -357,7 +361,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_11_rpc1_req_rep_with_rep_req_proxy_without_password(self):
         # RPC invoke method over REQ/REP sockets with an extra rep/req proxy in between
-        print "Test if invoking a method works over REQ/REP RPC socket, using an extra rep/req proxy"
+        print("Test if invoking a method works over REQ/REP RPC socket, using an extra rep/req proxy")
 
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:53000"])
 
@@ -383,7 +387,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_12_rpc1_req_rep_with_rep_req_proxy(self):
         # RPC invoke method over REQ/REP sockets with an extra rep/req proxy in between
-        print "Test if invoking a method works over REQ/REP RPC socket, includes a username/password and also an extra rep/req proxy"
+        print("Test if invoking a method works over REQ/REP RPC socket, includes a username/password and also an extra rep/req proxy")
 
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:52000"], username="username", password="password")
 
@@ -407,7 +411,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_13_rpc1_pub_sub_with_pub_sub_proxy(self):
         # RPC invoke method over PUB/SUB sockets and a PUB/SUB proxy
-        print "Test if invoking a method works over PUB/SUB RPC socket and a PUB/SUB proxy in between"
+        print("Test if invoking a method works over PUB/SUB RPC socket and a PUB/SUB proxy in between")
         server_thread = ZmqRpcServerThread(zmq_sub_connect_addresses=["tcp://localhost:4567"], rpc_functions={"invoke_test": invoke_test})
         server_thread.start()
 
@@ -437,7 +441,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_14_proxy(self):
         # With proxy elements
-        print "Add a proxy setup to the end to end chain pub->proxy.req->proxy.rep->pub->sub"
+        print("Add a proxy setup to the end to end chain pub->proxy.req->proxy.rep->pub->sub")
         sender = ZmqSender(zmq_pub_endpoint="tcp://*:57000")
 
         proxy_sub_req_thread = ZmqProxySub2ReqThread(zmq_sub_connect_addresses=['tcp://localhost:57000'], zmq_req_connect_addresses=["tcp://localhost:57001"], username_req="username", password_req="password")
@@ -454,9 +458,9 @@ class TestZmqPackage(unittest.TestCase):
         sender.send("test")
         # Sleep for pub/sub not guaranteed to be done on completing send_pub_socket
         time.sleep(1)
-        print "last received message by proxy_sub_req_thread: {0}".format(proxy_sub_req_thread.last_received_message())
-        print "last received message by proxy_rep_pub_thread: {0}".format(proxy_rep_pub_thread.last_received_message())
-        print "last received message by receiver_thread: {0}".format(receiver_thread.last_received_message())
+        print("last received message by proxy_sub_req_thread: {0}".format(proxy_sub_req_thread.last_received_message()))
+        print("last received message by proxy_rep_pub_thread: {0}".format(proxy_rep_pub_thread.last_received_message()))
+        print("last received message by receiver_thread: {0}".format(receiver_thread.last_received_message()))
 
         self.assertEqual(receiver_thread.last_received_message(), 'test')
 
@@ -472,7 +476,7 @@ class TestZmqPackage(unittest.TestCase):
 
     def test_15_rpc1_req_rep_with_rep_req_buffered_proxy(self):
         # RPC invoke method over REQ/REP sockets with an extra rep/req proxy in between
-        print "Test if invoking a method works over Buffered REQ/REP RPC socket, includes a username/password"
+        print("Test if invoking a method works over Buffered REQ/REP RPC socket, includes a username/password")
 
         test_state.last_invoked_param1 = None
         client = ZmqRpcClient(zmq_req_endpoints=["tcp://localhost:51000"], username="username", password="password")
@@ -495,21 +499,21 @@ class TestZmqPackage(unittest.TestCase):
         #Now send a couple of messages while nothing is receiving to validate buffering is owrking fine
         server_thread.stop()
         server_thread.join()
-        
+
         test_state.last_invoked_param1 = None
         response = client.invoke(function_name="invoke_test", function_parameters={"param1": "value1-2viaproxy", "param2": "value2viaproxy"}, time_out_waiting_for_response_in_sec=30)
 
         # Wait some time to be sure it has been processed and the system is retrying delivery.
         time.sleep(5)
-        
+
         server_thread = ZmqRpcServerThread(zmq_rep_bind_address="tcp://*:51001", rpc_functions={"invoke_test": invoke_test}, username="username2", password="password2")
         server_thread.start()
 
         # Wait some time to be sure it has been processed and the system is retrying delivery. A retry cycle is max 1 sec.
         time.sleep(2)
-        
+
         self.assertEquals(test_state.last_invoked_param1, "value1-2viaproxy")
-        
+
         server_thread.stop()
         server_thread.join()
         buf_proxy_rep_req_thread.stop()

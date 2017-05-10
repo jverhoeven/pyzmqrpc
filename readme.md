@@ -163,6 +163,10 @@ The buffered REP/REQ proxy quietly uses a PUB/SUB socket to introduce a means to
 Please note that this implementation is very pre-mature, although it works fine for me in my own project and has operated stable for months.
 
 # Change log
+## Version 2.0.0
+* Python 3 compatibility added.
+* Added to Travis CI
+
 ## Version 1.5.1
 * Fixed heartbeat reception in ZmqRpcServer.
 

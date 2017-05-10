@@ -6,9 +6,10 @@ Created on Apr 8, 2014
 @copyright: MIT license, see http://opensource.org/licenses/MIT
 '''
 import json
-from ZmqReceiver import ZmqReceiver
 from threading import Thread
 import logging
+
+from .ZmqReceiver import ZmqReceiver
 
 logger = logging.getLogger("zmqrpc")
 
@@ -24,15 +25,15 @@ class ZmqRpcServer(ZmqReceiver):
         ZmqReceiver.__init__(self, zmq_rep_bind_address, zmq_sub_connect_addresses, recreate_sockets_on_timeout_of_sec, username, password)
         self.rpc_functions = rpc_functions
 
-    def handle_incoming_message(self, incoming_message):
-        if incoming_message == "zmq_sub_heartbeat":
+    def handle_incoming_message(self, message):
+        if message == "zmq_sub_heartbeat":
             return None
-        
+
         status_code = 200
         status_message = "OK"
         response_message = None
         try:
-            incoming_message = json.loads(incoming_message)
+            incoming_message = json.loads(message)
         except Exception as e:
             status_code = 400
             status_message = "Incorrectly marshalled function. Incoming message is no proper json formatted string. Exception: {0}".format(e)

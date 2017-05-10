@@ -9,8 +9,8 @@ Created on Mar 31, 2014
 import argparse
 import signal
 import sys
-from zmqrpc.ZmqProxy import ZmqProxyRep2Pub, ZmqProxySub2Req, ZmqProxyRep2Req, ZmqProxySub2Pub
 import logging
+from zmqrpc.ZmqProxy import ZmqProxyRep2Pub, ZmqProxySub2Req, ZmqProxyRep2Req, ZmqProxySub2Pub
 
 
 if __name__ == '__main__':
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     elif (args.sub is not None or args.rep is not None) and (args.pub is not None or args.req is not None):
 
         # Handle OS signals (like keyboard interrupt)
-        def signal_handler(signal, frame):
+        def signal_handler(_, __):
             logger.info('Ctrl+C detected. Exiting...')
             sys.exit(0)
 
@@ -48,12 +48,12 @@ if __name__ == '__main__':
             server = ZmqProxySub2Req(zmq_sub_connect_addresses=args.sub, zmq_req_connect_addresses=args.req, username_sub=args.username_incoming, password_sub=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
             server.run()
         elif args.rep is not None and args.pub is not None:
-            server = ZmqProxyRep2Pub(zmq_rep_bind_address=args.rep, zmq_pub_bind_address=args.pub, username_sub=args.username_incoming, password_sub=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
-            server.start()
+            server = ZmqProxyRep2Pub(zmq_rep_bind_address=args.rep, zmq_pub_bind_address=args.pub, username_rep=args.username_incoming, password_rep=args.password_incoming, username_pub=args.username_outgoing, password_pub=args.password_outgoing)
+            server.run()
         elif args.sub is not None and args.pub is not None:
             server = ZmqProxySub2Pub(zmq_sub_connect_addresses=args.sub, zmq_pub_bind_address=args.pub, username_sub=args.username_incoming, password_sub=args.password_incoming, username_pub=args.username_outgoing, password_pub=args.password_outgoing)
             server.run()
         elif args.rep is not None and args.req is not None:
             server = ZmqProxyRep2Req(zmq_rep_bind_address=args.rep, zmq_req_connect_addresses=args.req, username_rep=args.username_incoming, password_rep=args.password_incoming, username_req=args.username_outgoing, password_req=args.password_outgoing)
-            server.start()
+            server.run()
     logger.info("Stopped zmqproxy...")

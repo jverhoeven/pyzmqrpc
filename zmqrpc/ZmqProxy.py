@@ -5,10 +5,13 @@ Created on Apr 8, 2014
 
 @copyright: MIT license, see http://opensource.org/licenses/MIT
 '''
-from ZmqReceiver import ZmqReceiver
-from ZmqSender import ZmqSender
-from threading import Thread
+from __future__ import print_function
+from builtins import super
 import logging
+from threading import Thread
+
+from .ZmqReceiver import ZmqReceiver
+from .ZmqSender import ZmqSender
 
 logger = logging.getLogger("zmqrpc")
 
@@ -124,7 +127,7 @@ class ZmqProxyRep2ReqThread(ZmqProxyThread):
         self.proxy = ZmqProxyRep2Req(zmq_rep_bind_address=zmq_rep_bind_address, zmq_req_connect_addresses=zmq_req_connect_addresses, recreate_sockets_on_timeout_of_sec=recreate_sockets_on_timeout_of_sec, username_rep=username_rep, password_rep=password_rep, username_req=username_req, password_req=password_req)
 
 
-# This proxy class uses a 'hidden' pub/sub socket to buffer any messages from REP to REQ socket 
+# This proxy class uses a 'hidden' pub/sub socket to buffer any messages from REP to REQ socket
 # in case the REQ socket is offline.
 class ZmqBufferedProxyRep2ReqThread(ZmqProxyThread):
     def __init__(self, zmq_rep_bind_address=None, zmq_req_connect_addresses=None, buffered_pub_address="tcp://*:59878", buffered_sub_address="tcp://localhost:59878", recreate_sockets_on_timeout_of_sec=600, username_rep=None, password_rep=None, username_req=None, password_req=None):
@@ -135,13 +138,13 @@ class ZmqBufferedProxyRep2ReqThread(ZmqProxyThread):
     def start(self):
         self.proxy1.start()
         self.proxy2.start()
-        super(ZmqProxyThread, self).start()
+        super().start()
 
     def stop(self):
         self.proxy1.stop()
         self.proxy2.stop()
 
-    def join(self):
+    def join(self, timeout=None):
         self.proxy1.join()
         self.proxy2.join()
-        super(ZmqProxyThread, self).join()
+        super().join()
