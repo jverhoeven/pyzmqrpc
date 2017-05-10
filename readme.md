@@ -1,4 +1,4 @@
-https://travis-ci.org/jverhoeven/pyzmqrpc.svg?branch=master
+![](https://travis-ci.org/jverhoeven/pyzmqrpc.svg?branch=master)
 
 # Introduction
 This Python package adds basic Remote Procedure Call functionalities to ZeroMQ. It does not do advanced serializing, but simply uses JSON call and response structures. 
